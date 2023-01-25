@@ -2,6 +2,7 @@ import * as React from 'react';
 import Container from '@mui/material/Container';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import Home from './Home';
 
 
 function App() {
@@ -9,7 +10,7 @@ function App() {
         <>
             <Header/>
             <Container sx={{margin: "10px"}}>
-            <h1> Hello World</h1>
+            <Home/>
             </Container>
             <Footer/>
         </>
