@@ -4,10 +4,12 @@ import { useState } from "react";
 import FilesTree from "../components/FilesTree";
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AltRouteIcon from '@mui/icons-material/AltRoute';
+import ObjectMapContext from "../context/ObjectMapContext";
 
-function BranchNavBar({currBranch,branches, setBranch}){
+function BranchNavBar({repoBranchName,branchesNames, setBranch}){
     function handlesSelectBranch(event){
-        setBranch(event.target.value)
+        const selectedBranchName = event.target.value;
+        setBranch(selectedBranchName);
     }
 
     return (
@@ -18,15 +20,14 @@ function BranchNavBar({currBranch,branches, setBranch}){
                     active branch:
                 </Typography>   
                 <Select
-                    value={currBranch}
+                    value={repoBranchName}
                     onChange={handlesSelectBranch}
                     size="small"
-                    
                 >
-                    {branches.map((branch, index)=>{
+                    {branchesNames.map((branchName, index)=>{
                         return (
-                            <MenuItem key={branch.id} value={branch}>
-                                {branch.name}
+                            <MenuItem key={index} value={branchName}>
+                                {branchName}
                             </MenuItem>
                         )
                     })}                  
@@ -53,20 +54,35 @@ function BranchNavBar({currBranch,branches, setBranch}){
     );
 }
 
+function RepositoryView({repository}){
+    // console.log(repository);
+    const [currBranch, setCurrBranch] = useState(repository.currBranch);
+    const currBranchCommit = repository.branches.get(repository.currBranch)
+    const [currCommit, setCurrCommit] = useState(repository.objectsMap.get(currBranchCommit));    
+    function setBranchCommit(newBranch){
+        const currBranchCommit = repository.branches.get(newBranch);
+        setCurrCommit(repository.objectsMap.get(currBranchCommit));
+        setCurrBranch(newBranch);
+    }
+
+    return (
+        <Container >
+            <BranchNavBar repoBranchName={currBranch} branchesNames={[...repository.branches.keys()]} setBranch={setBranchCommit}/>
+            <ObjectMapContext.Provider value={repository.objectsMap}>
+                <FilesTree currCommit={currCommit}/>
+            </ObjectMapContext.Provider>
+        </Container>
+    )
+}
+
 
 function RepositoryPage({repository}) {
-    const [currBranch, setCurrBranch] = useState(repository.branches[0]);
-    const filesList = <FilesTree currCommit={currBranch.currentCommit} />
-    
     return (
         <Container className={"repositoryView"}>
             <Typography variant="h3" gutterBottom>
                 {`${repository.creator}/${repository.name}`} 
             </Typography>
-            <BranchNavBar currBranch={currBranch} branches={repository.branches} setBranch={setCurrBranch}/>
-            <Container sx={{ml: 20, mt : 10}}>
-                {filesList}
-            </Container>
+            <RepositoryView repository={repository}/>
         </Container>
     );
 }

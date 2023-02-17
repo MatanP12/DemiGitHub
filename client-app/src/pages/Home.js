@@ -1,9 +1,9 @@
 import { Grid } from "@mui/material";
 import React from "react";
 import RepositoryCard from "../components/RepositoryCard";
-import repositories from "../test data/repositories";
+// import repositories from "../test data/repositories";
 
-function Home() {
+function Home({repositories}) {
 
     return (
         <Grid container spacing={2}>
