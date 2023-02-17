@@ -2,17 +2,18 @@ const sha1 = require("sha-1");
 
 function sha1FileTree(root, map){
     let sha1Root;
+    if(map.has(root)){
+        return root;
+    }
     if(root.type === "Folder"){
         root.fileContent = root.fileContent.map((currFile)=>{
-            return sha1FileTree
-        (currFile, map);
+            return sha1FileTree(currFile, map);
         })
         
         
         const rootStr = root.fileContent.reduce((accumulator, currFileSha1)=>{
             const currFile = map.get(currFileSha1);
-            return accumulator + `${currFile.name}-${currFileSha1}-${currFile.type}-${currFile.lastTouchDate}`;
-            
+            return accumulator + `${currFile.name}-${currFileSha1}-${currFile.type}-${currFile.lastTouchDate}\n`;
         }, "");
         sha1Root = sha1(rootStr);
     }
@@ -26,8 +27,7 @@ function sha1FileTree(root, map){
 
 
 function sha1Commit(commit, map){
-    commit.rootFolder = sha1FileTree
-(commit.rootFolder, map);    
+    commit.rootFolder = sha1FileTree(commit.rootFolder, map);    
     const commitStr = `${commit.title}-${commit.message}-${commit.prevCommits}-${commit.rootFolder}`
     const sha1Str = sha1(commitStr);
     map.set(sha1Str, commit);
@@ -93,14 +93,13 @@ const commitInnerFolder = createFile("400", "innerFolder", "Folder",[testFile2],
 
 const commitRootFolder1 = createFile("500", "my-first-repo", "Folder", [testFile1, commitInnerFolder].sort(compareFiles),new Date(Date.now()).toISOString());
 const initialCommit = createCommit("300", "Initial Commit", "The First and Best commit",[] ,commitRootFolder1, new Date(Date.now()).toISOString());
-// console.log("commit", initialCommit);
 const branchesMap = new Map();
 branchesMap.set("main", sha1Commit(initialCommit, objectsMap));
-
 commitInnerFolder.fileContent = [testFile2];
 const commitRootFolder2 = createFile("500", "my-first-repo", "Folder", [testFile4, commitInnerFolder, testFile3].sort(compareFiles),new Date(Date.now()).toISOString());
 const nextCommit = createCommit("350", "Second Commit", "The better and Bester commit", [branchesMap.get("main")], commitRootFolder2, new Date(Date.now()).toISOString());
 branchesMap.set("test branch", sha1Commit(nextCommit, objectsMap));
+// console.log(objectsMap);
 
 const repository = createRepository("100", "my-first-repo", "MatanP12", 
 "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed vulputate odio ut enim blandit volutpat maecenas volutpat." +
