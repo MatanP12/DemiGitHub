@@ -5,6 +5,8 @@ import FolderIcon from '@mui/icons-material/Folder';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { useState } from "react";
+import { useContext } from "react";
+import ObjectsMapContext from "../context/ObjectMapContext";
 
 function FileListItem({file, folderLevel}){
     return (
@@ -19,12 +21,14 @@ function FileListItem({file, folderLevel}){
 
 function FolderListItem({currFolder, folderLevel}) {
     const [isExpended, setIsExpended] = useState(true);
-    const files = currFolder.fileContent.map((currFolderItem)=>{
-        if(currFolderItem.type === "File"){
-            return <FileListItem key={currFolderItem.id} file={currFolderItem} folderLevel={folderLevel +3} />
+    const objectsMap = useContext(ObjectsMapContext);
+    const files = currFolder.fileContent.map((currFolderItemSHA1)=>{
+        const currObject = objectsMap.get(currFolderItemSHA1);
+        if(currObject.type === "File"){
+            return <FileListItem key={currObject.id} file={currObject} folderLevel={folderLevel +3} />
         }
         else{
-            return <FolderListItem key={currFolderItem.id} currFolder={currFolderItem} folderLevel={folderLevel+3}/>
+            return <FolderListItem key={currObject.id} currFolder={currObject} folderLevel={folderLevel+3}/>
         }
     })
     return (
@@ -47,13 +51,16 @@ function FolderListItem({currFolder, folderLevel}) {
 }
 
 function FilesTree({currCommit}){
-    const rootFolder = currCommit.rootFolder;
-    const rootFolderContent = rootFolder.fileContent.map((currFolderItem)=>{
-        if(currFolderItem.type === "File"){
-            return <FileListItem key={currFolderItem.id} file={currFolderItem} folderLevel={0} />
+    const objectsMap = useContext(ObjectsMapContext);
+    const rootFolder = objectsMap.get(currCommit.rootFolder);
+    console.log("root folder", rootFolder);
+    const rootFolderContent = rootFolder.fileContent.map((currObjectSHA1)=>{
+        const currObject = objectsMap.get(currObjectSHA1);
+        if(currObject.type === "File"){
+            return <FileListItem key={currObject.id} file={currObject} folderLevel={0} />
         }
         else{
-            return <FolderListItem key={currFolderItem.id} currFolder={currFolderItem} folderLevel={0}/>
+            return <FolderListItem key={currObject.id} currFolder={currObject} folderLevel={0}/>
         }
     })
 
