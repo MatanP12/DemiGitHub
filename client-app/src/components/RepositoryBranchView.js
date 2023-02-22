@@ -12,7 +12,7 @@ function BranchNavBar({repoBranchName,branchesNames, setBranch}){
 
     return (
         <Container sx={{display: "flex", }}>
-            <Container sx={{ justifyContent: "center", flexDirection: "row", maxWidth: "initial" }}>
+            <Container sx={{ justifyContent: "center", flexDirection: "row", maxWidth: "initial" , maxHeight:"min-content"}}>
 
                 <Typography variant="p" fontSize={24} noWrap>
                     active branch:
@@ -46,7 +46,6 @@ function BranchNavBar({repoBranchName,branchesNames, setBranch}){
                     <UploadFileIcon/>
                     Add new File
                 </Button>
-
             </Container>
         </Container>
     );
