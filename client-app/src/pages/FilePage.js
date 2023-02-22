@@ -3,12 +3,15 @@ import { Container } from "@mui/system";
 import ReactCodeMirror from "@uiw/react-codemirror";
 import Grid from '@mui/material/Grid';
 
-import { useCallback, useState } from "react";
+import { useCallback, useContext, useState } from "react";
 
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ObjectsMapContext from "../context/ObjectMapContext";
+
+
 
 function FileEditPanel({onSave, onRevent}){
     return (
@@ -52,14 +55,22 @@ function FileViewPanel({onChangeMode, onDeleteFile}){
 }
 
 
-function FilePage({file, fileFolderPath}){
+function FilePage({file, fatherFolder}){
     const [currFile, setCurrFile] = useState(file);
     const [isEditMode, setIsEditMode] = useState(false);
-
+    const objectsMap = useContext(ObjectsMapContext);
+    const sha1 = require("sha-1");
 
     function handleSaveFile(){
         setIsEditMode(false);
-        console.log(currFile)
+        const oldFileSha1 = sha1(file.fileContent);
+        const newFileSha1 = sha1(currFile.fileContent);
+        objectsMap.set(newFileSha1, currFile);
+        fatherFolder.fileContent = fatherFolder.fileContent.map((currFileSha1)=>{
+            return currFileSha1 === oldFileSha1 ? newFileSha1 : currFileSha1;
+        })
+        console.log(currFile);
+
         // TODO: Stage File Edit
     }
 
@@ -101,14 +112,14 @@ function FilePage({file, fileFolderPath}){
                 {isEditMode ?
                     <>
                         <Typography noWrap sx={{alignContent:"flex-start", overflow:"unset"}}>
-                            {fileFolderPath}
+                            {/* {fileFolderPath} */}
                         </Typography>
                         <TextField placeholder={currFile.name} size="small" name="name" onChange={handleChangeFileName}/> 
                         <FileEditPanel onSave={()=> {handleSaveFile()}} onRevent={handleReventFileChanges}/>
                     </> :
                     <>
                         <Typography variant="h5"  noWrap sx={{alignContent:"flex-start", overflow:"unset"}}>
-                            {fileFolderPath + currFile.name}
+                            {/* {fileFolderPath + currFile.name} */}
                         </Typography>
                         <FileViewPanel
                             onChangeMode = {()=>{setIsEditMode(!isEditMode)}}

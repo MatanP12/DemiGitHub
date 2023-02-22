@@ -1,14 +1,11 @@
 import { Collapse, List, ListItemButton, ListItemIcon, ListItemText, ListSubheader } from "@mui/material";
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
-//import EditIcon from '@mui/icons-material/Edit';
 import FolderIcon from '@mui/icons-material/Folder';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { useState } from "react";
-import { useContext } from "react";
-import ObjectsMapContext from "../context/ObjectMapContext";
 
-function FileListItem({file, folderLevel}){
+function FileListItem({file, folderLevel, parentFolder}){
     return (
         <ListItemButton sx={{pl: folderLevel, }}>
             <ListItemIcon>
@@ -19,16 +16,14 @@ function FileListItem({file, folderLevel}){
     );
 }
 
-function FolderListItem({currFolder, folderLevel}) {
+function FolderListItem({currFolder, folderLevel, parentFolder}) {
     const [isExpended, setIsExpended] = useState(true);
-    const objectsMap = useContext(ObjectsMapContext);
-    const files = currFolder.fileContent.map((currFolderItemSHA1)=>{
-        const currObject = objectsMap.get(currFolderItemSHA1);
+    const files = currFolder.fileContent.map((currObject)=>{
         if(currObject.type === "File"){
-            return <FileListItem key={currObject.id} file={currObject} folderLevel={folderLevel +3} />
+            return <FileListItem key={currObject.id} file={currObject} folderLevel={folderLevel +3} parentFolder={currFolder}/>
         }
         else{
-            return <FolderListItem key={currObject.id} currFolder={currObject} folderLevel={folderLevel+3}/>
+            return <FolderListItem key={currObject.id} currFolder={currObject} folderLevel={folderLevel+3} parentFolder={currFolder}/>
         }
     })
     return (
@@ -51,16 +46,13 @@ function FolderListItem({currFolder, folderLevel}) {
 }
 
 function FilesTree({currCommit}){
-    const objectsMap = useContext(ObjectsMapContext);
-    const rootFolder = objectsMap.get(currCommit.rootFolder);
-    console.log("root folder", rootFolder);
-    const rootFolderContent = rootFolder.fileContent.map((currObjectSHA1)=>{
-        const currObject = objectsMap.get(currObjectSHA1);
+    const rootFolder = currCommit.rootFolder;
+    const rootFolderContent = rootFolder.fileContent.map((currObject)=>{
         if(currObject.type === "File"){
-            return <FileListItem key={currObject.id} file={currObject} folderLevel={0} />
+            return <FileListItem key={currObject.id} file={currObject} folderLevel={0} parentFolder={rootFolder}/>
         }
         else{
-            return <FolderListItem key={currObject.id} currFolder={currObject} folderLevel={0}/>
+            return <FolderListItem key={currObject.id} currFolder={currObject} folderLevel={0} parentFolder={rootFolder}/>
         }
     })
 

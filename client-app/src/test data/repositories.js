@@ -1,40 +1,31 @@
 const sha1 = require("sha-1");
 
-function sha1FileTree(root, map){
-    let sha1Root;
-    if(map.has(root)){
-        return root;
+function sha1FileTree(root){
+    let rootStr
+    if(root.sha1){
+        return;
     }
     if(root.type === "Folder"){
-        root.fileContent = root.fileContent.map((currFile)=>{
-            return sha1FileTree(currFile, map);
-        })
-        
-        
-        const rootStr = root.fileContent.reduce((accumulator, currFileSha1)=>{
-            const currFile = map.get(currFileSha1);
-            return accumulator + `${currFile.name}-${currFileSha1}-${currFile.type}-${currFile.lastTouchDate}\n`;
+        rootStr = root.fileContent.reduce((accumulator, currFile)=>{
+            sha1FileTree(currFile);
+            return accumulator + `${currFile.name}-${currFile.sha1}-${currFile.type}-${currFile.lastTouchDate}\n`;
         }, "");
-        sha1Root = sha1(rootStr);
     }
     else{
-        sha1Root = sha1(root.fileContent);
+        rootStr = root.fileContent;
     }
-    map.set(sha1Root, root);
-    return sha1Root;
-
+    root.sha1 = sha1(rootStr);
+    console.log("after sha1", root);
 }
 
 
-function sha1Commit(commit, map){
-    commit.rootFolder = sha1FileTree(commit.rootFolder, map);    
-    const commitStr = `${commit.title}-${commit.message}-${commit.prevCommits}-${commit.rootFolder}`
-    const sha1Str = sha1(commitStr);
-    map.set(sha1Str, commit);
-    return sha1Str;
+function sha1Commit(commit){
+    sha1FileTree(commit.rootFolder);    
+    const commitStr = `${commit.title}-${commit.message}-${commit.prevCommits}-${commit.rootFolder.sha1}`
+    commit.sha1 = sha1(commitStr);
 }
 
-function createRepository(id,name, creator, description, branches, currBranch, objectsMap){
+function createRepository(id,name, creator, description, branches, currBranch){
     return {
         id : id,
         name : name,
@@ -42,7 +33,6 @@ function createRepository(id,name, creator, description, branches, currBranch, o
         description : description, 
         branches : branches,
         currBranch : currBranch,
-        objectsMap : objectsMap
     }
 }
 
@@ -54,7 +44,7 @@ function createCommit(id, title, message, prevCommits, rootFolder,creationDate){
         message: message,
         prevCommits : prevCommits,
         rootFolder : rootFolder,
-        creationDate : creationDate
+        creationDate : creationDate, 
     }
 }
 
@@ -83,7 +73,6 @@ function compareFiles(a,b){
     
 }
 
-const objectsMap = new Map();
 
 const testFile1 = createFile("600", "test.txt", "File", "I am a great test",new Date(Date.now()).toISOString());
 const testFile2 = createFile("700", "Hello world.txt", "File", "Hello World!", new Date(Date.now()).toISOString());
@@ -94,20 +83,22 @@ const commitInnerFolder = createFile("400", "innerFolder", "Folder",[testFile2],
 const commitRootFolder1 = createFile("500", "my-first-repo", "Folder", [testFile1, commitInnerFolder].sort(compareFiles),new Date(Date.now()).toISOString());
 const initialCommit = createCommit("300", "Initial Commit", "The First and Best commit",[] ,commitRootFolder1, new Date(Date.now()).toISOString());
 const branchesMap = new Map();
-branchesMap.set("main", sha1Commit(initialCommit, objectsMap));
-commitInnerFolder.fileContent = [testFile2];
+sha1Commit(initialCommit)
+branchesMap.set("main", initialCommit);
+// commitInnerFolder.fileContent = [testFile2];
 const commitRootFolder2 = createFile("500", "my-first-repo", "Folder", [testFile4, commitInnerFolder, testFile3].sort(compareFiles),new Date(Date.now()).toISOString());
-const nextCommit = createCommit("350", "Second Commit", "The better and Bester commit", [branchesMap.get("main")], commitRootFolder2, new Date(Date.now()).toISOString());
-branchesMap.set("test branch", sha1Commit(nextCommit, objectsMap));
+const nextCommit = createCommit("350", "Second Commit", "The better and Bester commit", [initialCommit], commitRootFolder2, new Date(Date.now()).toISOString());
+sha1Commit(nextCommit);
+branchesMap.set("test branch", nextCommit);
 // console.log(objectsMap);
 
 const repository = createRepository("100", "my-first-repo", "MatanP12", 
 "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed vulputate odio ut enim blandit volutpat maecenas volutpat." +
-"Ac odio tempor orci dapibus ultrices in iaculis nunc.", branchesMap, "main", objectsMap)
+"Ac odio tempor orci dapibus ultrices in iaculis nunc.", branchesMap, "main");
 
 
 const repositories = [repository];
 
-// console.log(objectsMap)
+console.log("Test repository:", repository)
 
 export default repositories;
