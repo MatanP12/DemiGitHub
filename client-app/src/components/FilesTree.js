@@ -3,11 +3,13 @@ import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import FolderIcon from '@mui/icons-material/Folder';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
-import { useState } from "react";
+import { useContext, useState } from "react";
+import SetFileContext from "../context/RepositoryContext";
 
-function FileListItem({file, folderLevel, parentFolder}){
+function FileListItem({file, folderLevel, folderPath}){
+    const setFile = useContext(SetFileContext);
     return (
-        <ListItemButton sx={{pl: folderLevel, }}>
+        <ListItemButton sx={{pl: folderLevel, }} onClick={()=>{setFile(file,folderPath)}}>
             <ListItemIcon>
                 <TextSnippetIcon />
             </ListItemIcon>
@@ -16,16 +18,18 @@ function FileListItem({file, folderLevel, parentFolder}){
     );
 }
 
-function FolderListItem({currFolder, folderLevel, parentFolder}) {
+function FolderListItem({currFolder, folderLevel, folderPath}) {
     const [isExpended, setIsExpended] = useState(true);
-    const files = currFolder.fileContent.map((currObject)=>{
+    const parentFolderPath = `${folderPath}/${currFolder.name}`
+    const files = [...currFolder.fileContent.values()].map((currObject)=>{
         if(currObject.type === "File"){
-            return <FileListItem key={currObject.id} file={currObject} folderLevel={folderLevel +3} parentFolder={currFolder}/>
+            return <FileListItem key={currObject.id} file={currObject} folderLevel={folderLevel +3} folderPath={parentFolderPath}/>
         }
         else{
-            return <FolderListItem key={currObject.id} currFolder={currObject} folderLevel={folderLevel+3} parentFolder={currFolder}/>
+            return <FolderListItem key={currObject.id} currFolder={currObject} folderLevel={folderLevel+3} folderPath={parentFolderPath}/>
         }
     })
+    
     return (
         <>
             <ListItemButton sx={{ pl: folderLevel}} onClick={ ()=>{ setIsExpended(!isExpended)}}>
@@ -47,12 +51,12 @@ function FolderListItem({currFolder, folderLevel, parentFolder}) {
 
 function FilesTree({currCommit}){
     const rootFolder = currCommit.rootFolder;
-    const rootFolderContent = rootFolder.fileContent.map((currObject)=>{
+    const rootFolderContent = [...rootFolder.fileContent.values()].map((currObject)=>{
         if(currObject.type === "File"){
-            return <FileListItem key={currObject.id} file={currObject} folderLevel={0} parentFolder={rootFolder}/>
+            return <FileListItem key={currObject.id} file={currObject} folderLevel={0} folderPath={`${rootFolder.name}`}/>
         }
         else{
-            return <FolderListItem key={currObject.id} currFolder={currObject} folderLevel={0} parentFolder={rootFolder}/>
+            return <FolderListItem key={currObject.id} currFolder={currObject} folderLevel={0} folderPath={`${rootFolder.name}`}/>
         }
     })
 

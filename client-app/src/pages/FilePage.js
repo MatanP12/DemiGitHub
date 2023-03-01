@@ -1,83 +1,77 @@
-import { Button, TextField, Typography } from "@mui/material";
+import { Button, DialogContent, DialogTitle, TextField, Typography } from "@mui/material";
 import { Container } from "@mui/system";
 import ReactCodeMirror from "@uiw/react-codemirror";
 import Grid from '@mui/material/Grid';
 
-import { useCallback, useContext, useState } from "react";
-
+import { useCallback, useState } from "react";
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import ObjectsMapContext from "../context/ObjectMapContext";
 
-
-
-function FileEditPanel({onSave, onRevent}){
+function FileEditPanel({onSave, onRevent, file, onChangeFileName}){
     return (
-        <Grid container spacing={4} sx={{justifyContent:"flex-end"}}>
-            <Grid item>
-                <Button variant="outlined" onClick={()=>{onRevent()}}>
-                    <CancelIcon/>
-                    Revent
-                </Button>
+        <Container sx={{display:'flex', alignItems:'center'}}>
+            <Typography variant="h5" noWrap sx={{alignContent:"flex-start", overflow:"unset"}}>
+                {file.filePath + "/"}
+            </Typography>
+            <TextField placeholder={file.name} size="small" name="name" variant="standard" onChange={onChangeFileName}
+                sx ={{ml:0.3}}
+                inputProps={{style:{fontSize:23, padding:0}}}
+            /> 
+            <Grid container spacing={4} sx={{justifyContent:"flex-end"}}>
+                <Grid item>
+                    <Button variant="outlined" onClick={()=>{onRevent()}}>
+                        <CancelIcon/>
+                        Revent
+                    </Button>
 
+                </Grid>
+                <Grid item >
+                    <Button variant="outlined" color="success" onClick={()=>{onSave()}}>
+                        <SaveIcon/>
+                        Stage
+                    </Button>
+                </Grid>
             </Grid>
-            <Grid item >
-                <Button variant="outlined" color="success" onClick={()=>{onSave()}}>
-                    <SaveIcon/>
-                    Stage
-                </Button>
-            </Grid>
-        </Grid>
+        </Container>
     );
 }
 
-function FileViewPanel({onChangeMode, onDeleteFile}){
+function FileViewPanel({onChangeMode, onDeleteFile, file}){
     return (
-        <Grid container spacing={4} sx={{justifyContent:"flex-end"}}>
-            <Grid item>
-                <Button variant="outlined" onClick={()=>{onChangeMode()}}>
-                    <EditIcon/>
-                    Edit
-                </Button>
-            </Grid>
-            <Grid item>
-                <Button variant="outlined" color="error" onClick={()=>{onDeleteFile()}}>
-                    <DeleteIcon/>
-                </Button>
-            </Grid>
+        <Container sx={{display:'flex', alignItems:'center'}}>
+            <Typography variant="h5"  noWrap sx={{alignContent:"flex-start", overflow:"unset"}}>
+                {file.filePath + "/" + file.name}
+            </Typography>
 
-        </Grid>
-
+            <Grid container spacing={4} sx={{justifyContent:"flex-end"}}>
+                <Grid item>
+                    <Button variant="outlined" onClick={()=>{onChangeMode()}}>
+                        <EditIcon/>
+                        Edit
+                    </Button>
+                </Grid>
+                <Grid item>
+                    <Button variant="outlined" color="error" onClick={()=>{onDeleteFile()}}>
+                        <DeleteIcon/>
+                    </Button>
+                </Grid>
+            </Grid>
+        </Container>
     );
-
 }
 
-
-function FilePage({file, fatherFolder}){
+function FilePageDialog({file, stageFileChange, stageFileToDelete}){
     const [currFile, setCurrFile] = useState(file);
     const [isEditMode, setIsEditMode] = useState(false);
-    const objectsMap = useContext(ObjectsMapContext);
-    const sha1 = require("sha-1");
-
     function handleSaveFile(){
         setIsEditMode(false);
-        const oldFileSha1 = sha1(file.fileContent);
-        const newFileSha1 = sha1(currFile.fileContent);
-        objectsMap.set(newFileSha1, currFile);
-        fatherFolder.fileContent = fatherFolder.fileContent.map((currFileSha1)=>{
-            return currFileSha1 === oldFileSha1 ? newFileSha1 : currFileSha1;
-        })
-        console.log(currFile);
-
-        // TODO: Stage File Edit
+        stageFileChange(currFile, file);
     }
 
     function handleDeleteFile(){
-        setIsEditMode(false);
-        // TODO: Stage file deletion
-
+        stageFileToDelete(currFile);
     }
 
     function handleReventFileChanges(){
@@ -96,36 +90,31 @@ function FilePage({file, fatherFolder}){
     }
 
     const onChangeFileContent = useCallback((value, viewUpdate)=>{
-        setCurrFile((prevFile)=>{
-            return {
-                ...prevFile,
-                fileContent : value
-            }
-        })
-    },[])
-
+            setCurrFile((prevFile)=>{
+                return {
+                    ...prevFile,
+                    fileContent : value
+                }
+            })
+        },[])
 
     return (
-        <Container>
-
-            <Container sx={{display: "flex", alignItems:"center"}}>
-                {isEditMode ?
-                    <>
-                        <Typography noWrap sx={{alignContent:"flex-start", overflow:"unset"}}>
-                            {/* {fileFolderPath} */}
-                        </Typography>
-                        <TextField placeholder={currFile.name} size="small" name="name" onChange={handleChangeFileName}/> 
-                        <FileEditPanel onSave={()=> {handleSaveFile()}} onRevent={handleReventFileChanges}/>
-                    </> :
-                    <>
-                        <Typography variant="h5"  noWrap sx={{alignContent:"flex-start", overflow:"unset"}}>
-                            {/* {fileFolderPath + currFile.name} */}
-                        </Typography>
+        <>
+            <DialogTitle sx={{display:'flex', maxHeight:'min-content'}}>
+                <Container sx={{display: "flex", alignItems:"center", }}>
+                    {isEditMode ?
+                        <FileEditPanel onSave={()=> {handleSaveFile()}} 
+                                        onRevent={handleReventFileChanges} 
+                                        onChangeFileName={handleChangeFileName}
+                                        file={currFile}
+                                        />:
                         <FileViewPanel
                             onChangeMode = {()=>{setIsEditMode(!isEditMode)}}
-                            onDeleteFile={handleDeleteFile}/>
-                    </>}
-            </Container>
+                            onDeleteFile={handleDeleteFile} file={currFile}/>
+                        }
+                </Container>
+            </DialogTitle>
+            <DialogContent>
             <ReactCodeMirror 
                 value={currFile.fileContent} 
                 height="720px"
@@ -136,12 +125,9 @@ function FilePage({file, fatherFolder}){
                 readOnly={!isEditMode}
                 onChange={onChangeFileContent}
             />
-            
-        </Container>
+            </DialogContent>
+        </>
     );
-
-
 }
 
-
-export default FilePage;
+export default FilePageDialog;
