@@ -1,13 +1,15 @@
-import { Button, DialogContent, DialogTitle, TextField, Typography } from "@mui/material";
+import { Button, Dialog, DialogContent, DialogTitle, IconButton, TextField, Typography } from "@mui/material";
 import { Container } from "@mui/system";
 import ReactCodeMirror from "@uiw/react-codemirror";
 import Grid from '@mui/material/Grid';
-
-import { useCallback, useState } from "react";
+import { useCallback, useContext, useState } from "react";
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import CloseIcon from '@mui/icons-material/Close';
+import StageFileContext from "../context/RepositoryContext";
+const sha1 = require("sha-1");
 
 function FileEditPanel({onSave, onRevent, file, onChangeFileName}){
     return (
@@ -62,16 +64,36 @@ function FileViewPanel({onChangeMode, onDeleteFile, file}){
     );
 }
 
-function FilePageDialog({file, stageFileChange, stageFileToDelete}){
+function FilePageDialog({isOpen,file, closePopUp}){
+    const stageFileChange = useContext(StageFileContext);
     const [currFile, setCurrFile] = useState(file);
     const [isEditMode, setIsEditMode] = useState(false);
+
+
+
+
+
+
     function handleSaveFile(){
+        currFile.sha1 = sha1(currFile.fileContent+currFile.name);
+        if(currFile.sha1 === file.sha1){
+            return;
+        }
+        if(currFile.name != file.name){
+            stageFileChange(currFile, file, "ChangeName");
+        }
+        else{
+        }
+
+
         setIsEditMode(false);
-        stageFileChange(currFile, file);
+        // stageFileChange(currFile,file, "Update");
+        closePopUp();
     }
 
     function handleDeleteFile(){
-        stageFileToDelete(currFile);
+        closePopUp();
+        stageFileChange(file,file, "Delete");
     }
 
     function handleReventFileChanges(){
@@ -89,6 +111,12 @@ function FilePageDialog({file, stageFileChange, stageFileToDelete}){
         });
     }
 
+    const handleCloseNewPopup = (event, reason) => {
+        if(reason && reason === "backdropClick"){
+            return;
+        }
+    };
+
     const onChangeFileContent = useCallback((value, viewUpdate)=>{
             setCurrFile((prevFile)=>{
                 return {
@@ -99,34 +127,53 @@ function FilePageDialog({file, stageFileChange, stageFileToDelete}){
         },[])
 
     return (
-        <>
-            <DialogTitle sx={{display:'flex', maxHeight:'min-content'}}>
-                <Container sx={{display: "flex", alignItems:"center", }}>
-                    {isEditMode ?
-                        <FileEditPanel onSave={()=> {handleSaveFile()}} 
-                                        onRevent={handleReventFileChanges} 
-                                        onChangeFileName={handleChangeFileName}
-                                        file={currFile}
-                                        />:
-                        <FileViewPanel
-                            onChangeMode = {()=>{setIsEditMode(!isEditMode)}}
-                            onDeleteFile={handleDeleteFile} file={currFile}/>
-                        }
-                </Container>
-            </DialogTitle>
-            <DialogContent>
-            <ReactCodeMirror 
-                value={currFile.fileContent} 
-                height="720px"
-                width="100%"
-                indentWithTab={true}
-                autoFocus={isEditMode}
-                editable={isEditMode}
-                readOnly={!isEditMode}
-                onChange={onChangeFileContent}
-            />
-            </DialogContent>
-        </>
+            <Dialog 
+                open={isOpen}
+                fullWidth={true}
+                maxWidth='lg'
+                onClose={handleCloseNewPopup}
+                disableEscapeKeyDown={true}
+            >
+                <DialogTitle sx={{display:'flex', maxHeight:'min-content'}}>
+                    <Container sx={{display: "flex", alignItems:"center", }}>
+                        {isEditMode ?
+                            <FileEditPanel onSave={()=> {handleSaveFile()}} 
+                                            onRevent={handleReventFileChanges} 
+                                            onChangeFileName={handleChangeFileName}
+                                            file={currFile}
+                                            />:
+                            <FileViewPanel
+                                onChangeMode = {()=>{setIsEditMode(!isEditMode)}}
+                                onDeleteFile={handleDeleteFile} file={currFile}/>
+                            }
+                            <IconButton
+                                aria-label="close"
+                                onClick={()=> {closePopUp();setIsEditMode(false)}}
+                                sx={{
+                                    position: 'absolute',
+                                    right: 8,
+                                    top: 8,
+                                    color: (theme) => theme.palette.grey[500],
+                                }}
+                                >
+                                <CloseIcon />
+                            </IconButton>
+
+                    </Container>
+                </DialogTitle>
+                <DialogContent>
+                <ReactCodeMirror 
+                    value={currFile.fileContent} 
+                    height="720px"
+                    width="100%"
+                    indentWithTab={true}
+                    autoFocus={isEditMode}
+                    editable={isEditMode}
+                    readOnly={!isEditMode}
+                    onChange={onChangeFileContent}
+                />
+                </DialogContent>
+            </Dialog>
     );
 }
 
