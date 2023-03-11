@@ -1,6 +1,6 @@
 import { createContext } from "react";
 
 
-const SetFileContext = createContext();
+const StageFileContext = createContext();
 
-export default SetFileContext;
+export default StageFileContext;
